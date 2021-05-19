@@ -33,7 +33,7 @@ class LyricReader:
         """
         lyrics = {}
         for song in self.artist_files:
-            with open(song, 'r') as f:
+            with open(song, 'r',encoding="utf-8") as f:
                 lyrics[song] = f.readlines()[0:-8]
         return lyrics
 
