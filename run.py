@@ -29,8 +29,8 @@ else:
     print("Producing lyrics for all artists", '\n\n')
     lyrics = UniversalLyricReader()
 
-model = LyricModel3(lyrics, args.ngram, seed=args.seed)
-song_gen = SongGenerator3(args.song, args.chorus, args.verse, args.syllables)
+model = LyricModel3(lyrics, args.ngram, args.syllables, seed=args.seed)
+song_gen = SongGenerator3(args.song, args.chorus, args.verse)
 song = song_gen.create_song(model)
 
 print(song)
