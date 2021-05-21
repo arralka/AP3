@@ -6,7 +6,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-artist', type=str, help='an integer for the accumulator', default='Linkin Park')
-parser.add_argument('-ngram', type=int, help='Number of words back for each state (n in ngrams)', default=3)
+parser.add_argument('-ngram', type=int, help='Number of words back for each state (n in ngrams)', default=2)
 parser.add_argument('-lines', type=int, help='Number of lines to produce', default=8)
 parser.add_argument('-seed', type=int, help='Random seed for reproducibility', default=None)
 parser.add_argument('-part', type=int, help='Random seed for reproducibility', default=None)
