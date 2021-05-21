@@ -33,7 +33,7 @@ class LyricModel:
         ngram_list = []
         state_list = []
         word_list = []
-        pFile=open("pmatrix.txt",'w')
+        pFile=open("pmatrix.m",'w')
         # Collect occurences of each ngram
         for l in self.lyrics:
             l = re.sub(' +', ' ', f"{'<s> ' * (self.n_count - 2)}{l}").strip()
@@ -52,7 +52,7 @@ class LyricModel:
         words = sorted(word_count.keys())
 
         # Find transfer probability
-        c=0
+        pFile.write("P=[")
         for state in states:
             count = state_count[state]
             prob_dict[state] = {}
@@ -60,9 +60,10 @@ class LyricModel:
                 prob_dict[state][word] = ngram_count.get(f'{state} {word}', 0) / count
                 pFile.write(str(prob_dict[state][word])+" ")
             pFile.write(";\n")
-            c=c+1
-        print("Total row",c)
-
+        pFile.write("];\n")
+        pFile.write("cond(P)\n");
+        pFile.close()
+        print("Finish writing P matrix file");
         # Transform </s> into absorbing state
         for key in prob_dict.keys():
             if key.split(' ')[-1] == '</s>':
