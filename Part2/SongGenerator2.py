@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from Part1.LyricModel import LyricModel
 
 
@@ -20,12 +22,11 @@ class SongGenerator2:
         self.verse_rhyme = verse_rhyme
 
     def create_song(self, model):
-        print("Creating Lyrics...")
         chorus = self._create_chorus(model)
 
         lyrics = "\n"
         verse_count = 1
-        for section in self.song_structure:
+        for section in tqdm(self.song_structure, desc="Generating Lyrics"):
             if section == 'C':
                 lyrics += "[CHORUS]\n"
                 lyrics += chorus

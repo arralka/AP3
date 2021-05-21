@@ -6,8 +6,8 @@ import requests
 
 
 class LyricModel2(LyricModel):
-    def __init__(self, lyric_reader: LyricReader, n, seed=None):
-        super().__init__(lyric_reader, n, seed)
+    def __init__(self, lyric_reader: LyricReader, n, seed=None, max_lyrics=10000):
+        super().__init__(lyric_reader, n, seed, max_lyrics)
 
     def create_lyrics(self, rhyme_structure):
         """
