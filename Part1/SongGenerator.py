@@ -1,7 +1,7 @@
 from Part1.LyricModel import LyricModel
 
 class SongGenerator:
-    def __init__(self, chorus_length, verse_length, song_structure):
+    def __init__(self, song_structure, chorus_length, verse_length):
         """
         Creates a song from markov lyric model
 

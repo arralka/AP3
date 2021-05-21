@@ -4,28 +4,35 @@ import pandas as pd
 from nltk import ngrams
 import numpy as np
 from helpers.lyric_reader import LyricReader
+from collections import Counter
+import random
+from tqdm import tqdm
 
 
 class LyricModel:
     """
     Discrete Time Markov Chain model class to produce lyrics from corpus
     """
-    def __init__(self, lyric_reader: LyricReader, n, seed=None):
+    def __init__(self, lyric_reader: LyricReader, n, seed=None, max_lyrics=10000):
         """
         :param lyric_reader: LyricReader object loaded with lyric data from Open Lyric Database
         :param n: number of words back for each state (the n in ngrams)
         """
         self.n_count = n
         self.lyric_reader = lyric_reader
-        self.lyrics = lyric_reader.lyrics
+        if len(lyric_reader.lyrics) > max_lyrics:
+            self.lyrics = random.sample(lyric_reader.lyrics, max_lyrics)
+        else:
+            self.lyrics = lyric_reader.lyrics
         self.P = self._build_P()
+        self.true_P = None
 
         if seed is not None:
             np.random.seed(seed)
 
     def _build_P(self):
         """
-        Build P matrix for
+        Build transition matrix for
 
         :return: Stochastic matrix P
         """
@@ -35,36 +42,31 @@ class LyricModel:
         word_list = []
 
         # Collect occurences of each ngram
-        for l in self.lyrics:
+        for l in tqdm(self.lyrics, desc="Collecting n-grams"):
             l = re.sub(' +', ' ', f"{'<s> ' * (self.n_count - 2)}{l}").strip()
             ngram_list += [' '.join(list(ng)) for ng in ngrams(l.split(' '), self.n_count)]
             state_list += [' '.join(list(ng)) for ng in ngrams(l.split(' '), self.n_count - 1)]
             word_list += l.split(' ')
 
-        ngram_count = {ng: ngram_list.count(ng) for ng in set(ngram_list)}
-        state_count = {s: state_list.count(s) for s in set(state_list)}
-        word_count = {w: word_list.count(w) for w in set(word_list)}
+        ngram_count = Counter(ngram_list)
+        state_count = Counter(state_list)
+        word_count = Counter(word_list)
 
         self.unique_words = set(word_list)
 
-        prob_dict = {}
-        states = sorted(state_count.keys())
-        words = sorted(word_count.keys())
+        states = pd.Series(sorted(state_count.keys()))
+        words = pd.Series(sorted(word_count.keys()))
+        tqdm.pandas()
 
-        # Find transfer probability
-        for state in states:
-            count = state_count[state]
-            prob_dict[state] = {}
-            for word in words:
-                prob_dict[state][word] = ngram_count.get(f'{state} {word}', 0) / count
+        # Find transfer probabilities
+        P = pd.DataFrame(states.progress_apply(lambda state: words.apply(lambda word: ngram_count.get(f'{state} {word}', 0) / state_count[state])))
+        P.index = states
+        P.columns = words
 
         # Transform </s> into absorbing state
-        for key in prob_dict.keys():
-            if key.split(' ')[-1] == '</s>':
-                prob_dict[key]['</s>'] = 1
+        for key in [k for k in P.columns if k.split(' ')[-1] == '</s>']:
+            P.loc[key, '</s>'] = 1
 
-        # Turn into P matrix
-        P = pd.DataFrame(prob_dict).transpose()
         P.index.name = 'STATE'
         return P
 
@@ -113,3 +115,21 @@ class LyricModel:
             return '</s>'
 
         return state_transitions.index[state_transitions.cumsum().searchsorted(r)]
+
+    def create_P(self):
+        """
+        Create true P matrix (nxn matrix of states)
+        """
+        if self.true_P is not None:
+            return self.true_P
+
+        p_dict = {}
+        for state in tqdm(self.P.index, desc='building true P'):
+            p_dict[state] = {}
+            for word in self.P.columns:
+                p_dict[state][' '.join(state.split(' ')[1:] + [word])] = self.P.loc[state, word]
+
+        return pd.DataFrame(p_dict).fillna(0)
+
+
+
